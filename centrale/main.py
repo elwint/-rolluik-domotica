@@ -5,6 +5,8 @@ import random
 
 def get_data(ser, values=0):
 	response = ser.read(1 + (2*values))
+	if not len(response):
+		return None
 	if values == 0:
 		status = bytes(response)[0]
 	else:
@@ -26,6 +28,14 @@ def write_data(ser, command, data=[]):
 
 ser = serial.Serial('/dev/ttyACM0', 19200, timeout=0.25)
 while ser.is_open:
+	time.sleep(2.5)
+
+	print('Sending invalid command')
+	write_data(ser, 230)
+	print(get_data(ser, 1))
+
+	print()
+
 	print('Sending ping command')
 	write_data(ser, 1)
 	print(get_data(ser))
@@ -34,6 +44,12 @@ while ser.is_open:
 
 	print('Sending echo command')
 	write_data(ser, 2, [random.randint(0,65000)])
+	print(get_data(ser, 1))
+
+	print()
+
+	print('Sending echo command without value')
+	write_data(ser, 2)
 	print(get_data(ser, 1))
 
 	print()
