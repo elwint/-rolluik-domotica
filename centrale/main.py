@@ -1,9 +1,24 @@
 #!/bin/python3
 from PyQt5 import QtWidgets, uic
+from enum import IntEnum
 import threading, sys, os
 import serial
 import serial.tools.list_ports
 import time
+
+class Command(IntEnum):
+	PING = 1
+	ECHO = 2
+	SENSOR = 3
+
+class Status(IntEnum):
+	OK = 0
+	UNKNOWN_COMMAND = 1
+	MISSING_DATA = 2
+
+class Sensor(IntEnum):
+	LIGHT = 1
+	TEMP = 2
 
 class Arduino:
 	def __init__(self, port):
@@ -24,13 +39,13 @@ class Arduino:
 		else:
 			status = response[0]
 
-		if status == 1:
+		if status == Status.UNKNOWN_COMMAND:
 			raise Exception('Sent unknown command')
-		elif status == 2:
-			raise Exception('Sent more values than expected')
+		elif status == Status.MISSING_DATA:
+			raise Exception('Sent less values than expected')
 
 		data = []
-		if (values < (len(response)-1) // 2):
+		if (values < (len(response)-1) / 2):
 			raise Exception('Received less values than expected')
 		for i in range(values):
 			data.append(256*response[i*2+1] + response[i*2+2])
@@ -46,20 +61,45 @@ class Arduino:
 	def close(self):
 		self.ser.close()
 
-	def get_port(self):
-		return self.port
+class Widget:
+	def __init__(self, parent, device): #TODO: Add widget to window
+		self.widget_ui = uic.loadUi('widget.ui')
+		self.parent = parent
+		self.dev = device
+		self.stop = False
+		self.run()
+
+	def update_data(self): #TODO: update data & graph
+		print('Updating widget ' + self.dev.port)
+		data = self.dev.send(Command.SENSOR, [], 3)
+		if data[1] == Sensor.LIGHT:
+			pass
+		elif data[1] == Sensor.TEMP:
+			pass
+
+	def run(self):
+		if self.stop:
+			return
+		self.update_data()
+		threading.Timer(60, self.run).start()
+	
+	def remove(self): #TODO: Remove from window
+		self.stop = True
+
+app = QtWidgets.QApplication(sys.argv)
+mainWindow = uic.loadUi('main.ui')
 
 cPorts = []
-cDevices = []
-def update_devices(loop=False):
-	global cPorts, cDevices
+device_widgets = []
+def update_devices():
 	portList = list(serial.tools.list_ports.comports())
 	for cPort in cPorts:
 		if cPort not in portList: # Device disconnected
-			for dev in cDevices:
-				if dev.get_port() == cPort[0]:
-					cDevices.remove(dev)
-					mainWindow.lblPort.setText('--')
+			for widget in device_widgets:
+				if widget.dev.port == cPort[0]:
+					widget.remove()
+					widget.dev.close()
+					device_widgets.remove(widget)
 					break
 			cPorts.remove(cPort)
 
@@ -68,21 +108,17 @@ def update_devices(loop=False):
 			continue
 		try: # Test new device
 			dev = Arduino(port[0])
-			data = dev.send(1)
+			data = dev.send(Command.PING)
 			if data != None:
-				cDevices.append(dev)
-				mainWindow.lblPort.setText(port[0])
+				w = Widget(mainWindow, dev)
+				device_widgets.append(w)
 			else:
 				dev.close()
 		except serial.SerialException:
 			pass
 		cPorts.append(port)
-	if loop:
-		threading.Timer(1, update_devices, [True]).start()
+	threading.Timer(1, update_devices).start()
 
-threading.Timer(1, update_devices, [True]).start()
-app = QtWidgets.QApplication(sys.argv)
-mainWindow = uic.loadUi('main.ui')
-#mainWindow.btnInstellen.clicked.connect(test)
+threading.Timer(1, update_devices).start()
 mainWindow.show()
 os._exit(app.exec_())
