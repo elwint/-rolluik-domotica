@@ -1,10 +1,6 @@
 #include <avr/io.h>
 
-#define F_CPU 16000000UL
-#define BAUD 19200
 #include <util/setbaud.h>
-
-#include <util/delay.h>
 
 #define hi8(x)  ((x) >> 8)
 #define lo8(x)  ((x) & 0xFF)
@@ -30,6 +26,7 @@ uint8_t uart_has_data() {
 void uart_put_uint8(uint8_t i) {
 	UDR0 = i;
 	loop_until_bit_is_set(UCSR0A, TXC0); /* Wait until transmission ready. */
+	_delay_ms(0.5);
 }
 
 void uart_put_uint16(uint16_t i) {

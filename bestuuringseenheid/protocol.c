@@ -2,7 +2,8 @@
 
 enum command_t {
 	COMMAND_PING = 1,
-	COMMAND_ECHO = 2
+	COMMAND_ECHO = 2,
+	COMMAND_SENSOR = 3
 };
 
 enum status_t {
@@ -35,6 +36,12 @@ void protocol_handler() {
 			data = uart_get_uint16();
 			uart_put_uint8(STATUS_OK);
 			uart_put_uint16(data);
+			break;
+		case COMMAND_SENSOR:
+			uart_put_uint8(STATUS_OK);
+			uart_put_uint16(distance);
+			uart_put_uint16(sensor_type);
+			uart_put_uint16(sensor_data);
 			break;
 		default: // Unknown command
 			uart_put_uint8(STATUS_UNKNOWN_COMMAND);
