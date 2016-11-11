@@ -9,7 +9,7 @@ class Arduino:
 	def __init__(self, port):
 		self.port = port
 		self.ser = serial.Serial(self.port, 19200, timeout=0.25)
-		time.sleep(2.5) #TODO: Fix freeze issue
+		time.sleep(2.5)
 
 	def send(self, command, data=[], values=0):
 		self.write_data(command, data)
@@ -53,42 +53,36 @@ cPorts = []
 cDevices = []
 def update_devices(loop=False):
 	global cPorts, cDevices
-	print('Checking...')
 	portList = list(serial.tools.list_ports.comports())
 	for cPort in cPorts:
 		if cPort not in portList: # Device disconnected
 			for dev in cDevices:
 				if dev.get_port() == cPort[0]:
 					cDevices.remove(dev)
+					mainWindow.lblPort.setText('--')
 					break
-			else:
-				raise Exception('Attempted to remove an unknown device')
 			cPorts.remove(cPort)
-			mainWindow.lblPort.setText('--')
-			print('Disconnected ' + cPort[0])
 
 	for port in portList:
 		if port in cPorts:
 			continue
-		print('Testing new device...')
-		try: # Test new devices
+		try: # Test new device
 			dev = Arduino(port[0])
 			data = dev.send(1)
 			if data != None:
 				cDevices.append(dev)
-				cPorts.append(port)
 				mainWindow.lblPort.setText(port[0])
-				print('Added ' + port[0])
-			else: #TODO: Remember tested devices
+			else:
 				dev.close()
 		except serial.SerialException:
-			continue
+			pass
+		cPorts.append(port)
 	if loop:
-		threading.Timer(2, update_devices, [True]).start()
+		threading.Timer(1, update_devices, [True]).start()
 
+threading.Timer(1, update_devices, [True]).start()
 app = QtWidgets.QApplication(sys.argv)
 mainWindow = uic.loadUi('main.ui')
 #mainWindow.btnInstellen.clicked.connect(test)
 mainWindow.show()
-update_devices(True)
 os._exit(app.exec_())
