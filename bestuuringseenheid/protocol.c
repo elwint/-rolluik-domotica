@@ -97,9 +97,13 @@ void protocol_handler() {
 			state = uart_get_uint16();
 			forced = 1;
 
+			uart_put_uint8(STATUS_OK);
+
 			break;
 		case COMMAND_AUTO:
 			forced = 0;
+
+			uart_put_uint8(STATUS_OK);
 
 			break;
 		default: // Unknown command

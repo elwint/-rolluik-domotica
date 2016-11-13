@@ -18,7 +18,7 @@ enum sensor_types sensor_type =
 LIGHT
 #endif
 #ifdef temp
-TEMP;
+TEMP
 #endif
 ;
 
