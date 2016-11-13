@@ -16,6 +16,18 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>408</width>
+    <height>405</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>408</width>
+    <height>405</height>
+   </size>
+  </property>
   <property name="font">
    <font>
     <family>Open Sans</family>
@@ -62,7 +74,7 @@
          </font>
         </property>
         <property name="text">
-         <string>COM1</string>
+         <string>--</string>
         </property>
        </widget>
       </item>
@@ -128,7 +140,7 @@
             </font>
            </property>
            <property name="text">
-            <string>UITGEROLD [automatisch]</string>
+            <string>--</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -145,7 +157,7 @@
          <item row="1" column="1">
           <widget class="QLabel" name="lblOprollen">
            <property name="text">
-            <string>0,05 m</string>
+            <string>--</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -162,7 +174,7 @@
          <item row="2" column="1">
           <widget class="QLabel" name="lblUitrollen">
            <property name="text">
-            <string>1,60 m</string>
+            <string>--</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -225,7 +237,7 @@
                   </font>
                  </property>
                  <property name="text">
-                  <string>110 klx</string>
+                  <string>--</string>
                  </property>
                 </widget>
                </item>
@@ -264,7 +276,7 @@
                <item row="1" column="1">
                 <widget class="QLabel" name="lblSensorUitrollen">
                  <property name="text">
-                  <string>110 klx</string>
+                  <string>--</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -277,7 +289,7 @@
                   <enum>Qt::LeftToRight</enum>
                  </property>
                  <property name="text">
-                  <string>90 klx</string>
+                  <string>--</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -299,31 +311,28 @@
             </font>
            </property>
            <property name="text">
-            <string>Sensordata Lichtintensiteit</string>
+            <string>Sensordata --</string>
            </property>
           </widget>
          </item>
         </layout>
        </widget>
       </item>
+      <item row="2" column="0">
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>136</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
      </layout>
-     <zorder>frmTitle</zorder>
-     <zorder>frmBasic</zorder>
-     <zorder>frmSensor</zorder>
     </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>136</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="QFrame" name="frmButtons">

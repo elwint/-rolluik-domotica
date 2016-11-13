@@ -1,15 +1,18 @@
 #!/bin/python3
-from PyQt5 import QtWidgets, uic
+from PyQt5 import QtCore, QtWidgets, uic
 from enum import IntEnum
-import threading, sys, os
-import serial
+import sys, os, time, serial
 import serial.tools.list_ports
-import time
 
 class Command(IntEnum):
 	PING = 1
 	ECHO = 2
 	SENSOR = 3
+	STATUS = 4
+	GET_LIMITS = 5
+	SET_LIMITS = 6
+	FORCE = 7
+	AUTO = 8
 
 class Status(IntEnum):
 	OK = 0
@@ -19,6 +22,10 @@ class Status(IntEnum):
 class Sensor(IntEnum):
 	LIGHT = 1
 	TEMP = 2
+
+class State(IntEnum):
+	UP = 1
+	DOWN = 2
 
 class Arduino:
 	def __init__(self, port):
@@ -43,6 +50,8 @@ class Arduino:
 			raise Exception('Sent unknown command')
 		elif status == Status.MISSING_DATA:
 			raise Exception('Sent less values than expected')
+		elif status != Status.OK:
+			raise Exception('Received unknown status')
 
 		data = []
 		if (values < (len(response)-1) / 2):
@@ -62,29 +71,70 @@ class Arduino:
 		self.ser.close()
 
 class Widget:
-	def __init__(self, parent, device): #TODO: Add widget to window
-		self.widget_ui = uic.loadUi('widget.ui')
+	def __init__(self, parent, device):
+		self.gui = uic.loadUi('widget.ui')
 		self.parent = parent
 		self.dev = device
-		self.stop = False
-		self.run()
 
-	def update_data(self): #TODO: update data & graph
-		print('Updating widget ' + self.dev.port)
-		data = self.dev.send(Command.SENSOR, [], 3)
-		if data[1] == Sensor.LIGHT:
-			pass
-		elif data[1] == Sensor.TEMP:
-			pass
+		self.parent.widgetsLayout.addWidget(self.gui)
+		self.gui.lblPort.setText(self.dev.port)
+		self.gui.btnInstellen.clicked.connect(self.set_limits)
+		self.gui.btnOprollen.clicked.connect(lambda: self.force_state(State.UP))
+		self.gui.btnUitrollen.clicked.connect(lambda: self.force_state(State.DOWN))
+		self.gui.btnAutomatisch.clicked.connect(self.enable_auto)
 
-	def run(self):
-		if self.stop:
-			return
 		self.update_data()
-		threading.Timer(60, self.run).start()
-	
-	def remove(self): #TODO: Remove from window
-		self.stop = True
+		self.timer = QtCore.QTimer()
+		self.timer.timeout.connect(self.update_data)
+		self.timer.start(60000)
+
+	def update_data(self): #TODO: Graph
+		print('Updating widget ' + self.dev.port)
+		status = self.dev.send(Command.STATUS, [], 3)
+		sensor = self.dev.send(Command.SENSOR, [], 3)
+		limits = self.dev.send(Command.GET_LIMITS, [], 4)
+
+		if status[2] == 0:
+			statusText = 'OPGEROLD ' if status[1] == State.UP else 'UITGEROLD '
+		else:
+			statusText = 'OPROLLEN ' if status[1] == State.UP else 'UITROLLEN '
+		statusText += str(sensor[0]/100) + ' m '
+		statusText += '[automatisch]' if status[0] == 0 else '[handmatig]'
+
+		self.gui.lblStatus.setText(statusText)
+		self.gui.lblOprollen.setText(str(limits[0]/100) + ' m')
+		self.gui.lblUitrollen.setText(str(limits[1]/100) + ' m')
+
+		if sensor[1] == Sensor.LIGHT:
+			self.gui.lblSensor.setText('Sensordata Lichtintensiteit')
+			unit = ' klx'
+			sensorData = sensor[2]
+		elif sensor[1] == Sensor.TEMP:
+			self.gui.lblSensor.setText('Sensordata Temperatuur')
+			unit = ' ºC'
+			sensorData = sensor[2]-50
+
+		self.gui.lblSensorData.setText(str(sensorData) + unit)
+		self.gui.lblSensorOprollen.setText(str(limits[2]) + unit)
+		self.gui.lblSensorUitrollen.setText(str(limits[3]) + unit)
+
+	def force_state(self, state):
+		self.dev.send(Command.FORCE, [state])
+		self.update_data()
+
+	def enable_auto(self):
+		self.dev.send(Command.AUTO)
+		self.update_data()
+
+	def set_limits(self): #TODO: Limits popup
+		pass
+
+	def remove(self):
+		print('Removing widget' + self.dev.port)
+		self.parent.widgetsLayout.removeWidget(self.gui)
+		self.gui.deleteLater()
+		self.gui = None
+		self.timer.stop()
 
 app = QtWidgets.QApplication(sys.argv)
 mainWindow = uic.loadUi('main.ui')
@@ -106,19 +156,47 @@ def update_devices():
 	for port in portList:
 		if port in cPorts:
 			continue
+
+		t = False
 		try: # Test new device
 			dev = Arduino(port[0])
 			data = dev.send(Command.PING)
 			if data != None:
-				w = Widget(mainWindow, dev)
-				device_widgets.append(w)
+				t = True
 			else:
 				dev.close()
-		except serial.SerialException:
+		except:
 			pass
-		cPorts.append(port)
-	threading.Timer(1, update_devices).start()
 
-threading.Timer(1, update_devices).start()
+		if t == True:
+			w = Widget(mainWindow, dev)
+			device_widgets.append(w)
+		cPorts.append(port)
+
+def update_widgets():
+	for w in device_widgets:
+		w.update_data()
+
+def all_set_limits(): #TODO: Limits popup
+	pass
+
+def all_force_state(state):
+	for w in device_widgets:
+		w.dev.send(Command.FORCE, [state])
+	update_widgets()
+
+def all_enable_auto():
+	for w in device_widgets:
+		w.dev.send(Command.AUTO)
+	update_widgets()
+
+timer = QtCore.QTimer()
+timer.timeout.connect(update_devices)
+timer.start(1000)
+
+mainWindow.btnInstellen.clicked.connect(all_set_limits)
+mainWindow.btnOprollen.clicked.connect(lambda: all_force_state(State.UP))
+mainWindow.btnUitrollen.clicked.connect(lambda: all_force_state(State.DOWN))
+mainWindow.btnAutomatisch.clicked.connect(all_enable_auto)
 mainWindow.show()
 os._exit(app.exec_())

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1174</width>
-    <height>656</height>
+    <width>1269</width>
+    <height>697</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,7 +19,7 @@
   <property name="minimumSize">
    <size>
     <width>900</width>
-    <height>0</height>
+    <height>450</height>
    </size>
   </property>
   <property name="font">
@@ -211,20 +211,16 @@
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="details">
+      <widget class="QWidget" name="widgets">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1172</width>
-         <height>617</height>
+         <width>1267</width>
+         <height>658</height>
         </rect>
        </property>
-       <layout class="QFormLayout" name="formLayout">
-        <property name="fieldGrowthPolicy">
-         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-        </property>
-       </layout>
+       <layout class="QGridLayout" name="widgetsLayout"/>
       </widget>
      </widget>
     </item>

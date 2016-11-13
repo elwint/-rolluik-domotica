@@ -5,9 +5,10 @@ enum command_t {
 	COMMAND_ECHO = 2,
 	COMMAND_SENSOR = 3,
 	COMMAND_STATUS = 4,
-	COMMAND_SET_LIMITS = 5,
-	COMMAND_FORCE = 6,
-	COMMAND_AUTO = 7
+	COMMAND_GET_LIMITS = 5,
+	COMMAND_SET_LIMITS = 6,
+	COMMAND_FORCE = 7,
+	COMMAND_AUTO = 8
 };
 
 enum status_t {
@@ -57,6 +58,15 @@ void protocol_handler() {
 			uart_put_uint16(forced);
 			uart_put_uint16(state);
 			uart_put_uint16(done);
+
+			break;
+		case COMMAND_GET_LIMITS:
+			uart_put_uint8(STATUS_OK);
+
+			uart_put_uint16(min_distance);
+			uart_put_uint16(max_distance);
+			uart_put_uint16(up_sensor);
+			uart_put_uint16(down_sensor);
 
 			break;
 		case COMMAND_SET_LIMITS:
