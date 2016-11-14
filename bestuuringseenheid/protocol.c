@@ -14,7 +14,8 @@ enum command_t {
 enum status_t {
 	STATUS_OK = 0,
 	STATUS_UNKNOWN_COMMAND = 1,
-	STATUS_MISSING_DATA = 2
+	STATUS_MISSING_DATA = 2,
+	STATUS_INVALID_LIMITS = 3
 };
 
 void protocol_init() {
@@ -74,25 +75,35 @@ void protocol_handler() {
 				uart_put_uint8(STATUS_MISSING_DATA);
 				break;
 			}
-			min_distance = uart_get_uint16();
+			unsigned int min_dist = uart_get_uint16();
 
 			if (!uart_has_data()) {
 				uart_put_uint8(STATUS_MISSING_DATA);
 				break;
 			}
-			max_distance = uart_get_uint16();
+			unsigned int max_dist = uart_get_uint16();
 
 			if (!uart_has_data()) {
 				uart_put_uint8(STATUS_MISSING_DATA);
 				break;
 			}
-			up_sensor    = uart_get_uint16();
+			unsigned int u_sensor = uart_get_uint16();
 
 			if (!uart_has_data()) {
 				uart_put_uint8(STATUS_MISSING_DATA);
 				break;
 			}
-			down_sensor  = uart_get_uint16();
+			unsigned int d_sensor = uart_get_uint16();
+
+			if (((min_dist < 2 || min_dist > 400) || (max_dist < 2 || max_dist > 400) || (max_dist - min_dist < (margin_distance*2))) &&
+				((u_sensor < min_sensor || u_sensor > max_sensor) || (d_sensor < min_sensor || d_sensor > max_sensor) || (d_sensor - u_sensor < (margin_sensor*2)))) {
+				uart_put_uint8(STATUS_INVALID_LIMITS);
+				break;
+			}
+			min_distance = min_dist;
+			max_distance = max_dist;
+			up_sensor    = u_sensor;
+			down_sensor  = d_sensor;
 
 			done = 0;
 
@@ -106,6 +117,7 @@ void protocol_handler() {
 			}
 			state = uart_get_uint16();
 			forced = 1;
+			done = 0;
 
 			uart_put_uint8(STATUS_OK);
 
