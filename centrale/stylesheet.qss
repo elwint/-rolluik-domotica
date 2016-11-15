@@ -1,0 +1,54 @@
+QWidget {
+	background: #FFF;
+	color: #333;
+	font-family: "Open Sans", "Helvetica Neue", "Helvetica", "Arial";
+	font-size: 12pt;
+}
+
+#lblSensorData, #lblPort {
+	font-size: 25pt;
+}
+
+#menu {
+	min-height: 30px;
+	padding: 0;
+}
+
+#menu > QPushButton {
+	min-width: 200px;
+	margin: 0;
+	background: #FFF;
+	border: none;
+	border-right: 1px solid #DDD;
+}
+
+QPushButton {
+	border: 1px solid #AAA;
+	margin-bottom: 15px;
+	margin: 2px;
+	padding: 5px 10px;
+	height: 20px;
+	background: #EEE;
+}
+
+#frmTitle, #frmTitle > * {
+	background: #AFB;
+}
+
+#arduinoWidget {
+	border: 1px solid #DDD;
+	margin: 5px;
+	background: #F00;
+}
+
+QLineEdit {
+	height: 15px;
+	padding: 5px;
+	background: #FFF;
+	border: 1px solid #DDD;
+	margin: 2px;
+}
+
+QLineEdit:focus {
+	border-color: #8D9;
+}

@@ -78,6 +78,9 @@
        <enum>QFrame::Plain</enum>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <property name="leftMargin">
         <number>0</number>
        </property>
@@ -91,114 +94,129 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QFrame" name="frame">
+        <widget class="QPushButton" name="btnInstellen">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
-           <width>850</width>
+           <width>150</width>
            <height>0</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>0</width>
+           <width>212</width>
            <height>16777215</height>
           </size>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="btnInstellen">
-            <property name="maximumSize">
-             <size>
-              <width>212</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <family>Open Sans</family>
-              <pointsize>12</pointsize>
-              <stylestrategy>PreferDefault</stylestrategy>
-              <kerning>true</kerning>
-             </font>
-            </property>
-            <property name="text">
-             <string>Alles instellen</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnOprollen">
-            <property name="maximumSize">
-             <size>
-              <width>212</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <family>Open Sans</family>
-              <pointsize>12</pointsize>
-              <stylestrategy>PreferDefault</stylestrategy>
-              <kerning>true</kerning>
-             </font>
-            </property>
-            <property name="text">
-             <string>Alles oprollen</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnUitrollen">
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <family>Open Sans</family>
-              <pointsize>12</pointsize>
-              <stylestrategy>PreferDefault</stylestrategy>
-              <kerning>true</kerning>
-             </font>
-            </property>
-            <property name="text">
-             <string>Alles uitrollen</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="btnAutomatisch">
-            <property name="font">
-             <font>
-              <family>Open Sans</family>
-              <pointsize>12</pointsize>
-              <stylestrategy>PreferDefault</stylestrategy>
-              <kerning>true</kerning>
-             </font>
-            </property>
-            <property name="text">
-             <string>Alles automatisch</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <property name="font">
+          <font>
+           <family>Open Sans</family>
+           <pointsize>12</pointsize>
+           <stylestrategy>PreferDefault</stylestrategy>
+           <kerning>true</kerning>
+          </font>
+         </property>
+         <property name="text">
+          <string>Alles instellen</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnAutomatisch">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <family>Open Sans</family>
+           <pointsize>12</pointsize>
+           <stylestrategy>PreferDefault</stylestrategy>
+           <kerning>true</kerning>
+          </font>
+         </property>
+         <property name="text">
+          <string>Alles automatisch</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnUitrollen">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <family>Open Sans</family>
+           <pointsize>12</pointsize>
+           <stylestrategy>PreferDefault</stylestrategy>
+           <kerning>true</kerning>
+          </font>
+         </property>
+         <property name="text">
+          <string>Alles uitrollen</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnOprollen">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>150</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>212</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <family>Open Sans</family>
+           <pointsize>12</pointsize>
+           <stylestrategy>PreferDefault</stylestrategy>
+           <kerning>true</kerning>
+          </font>
+         </property>
+         <property name="text">
+          <string>Alles oprollen</string>
+         </property>
         </widget>
        </item>
        <item>
