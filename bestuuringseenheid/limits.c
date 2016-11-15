@@ -32,9 +32,6 @@ enum state_t state = STATE_NONE;
 uint8_t forced = 0;
 
 void state_update() {
-	if (!sensor_has_run) {
-		return;
-	}
 	if (!forced) {
 		enum state_t newstate = STATE_NONE;
 		if (sensor_data <= up_sensor) {
@@ -68,13 +65,12 @@ void state_update() {
 	if ((distance >= (target-margin_distance)) && (distance <= (target+margin_distance))) {
 		done = 1;
 	}
-
 }
 
 void state_init() {
-	if ((distance - margin_distance) <= min_distance) {
+	if (distance <= (min_distance + margin_distance)) {
 		state = STATE_UP;
-	} else if ((distance + margin_distance) >= max_distance) {
+	} else if (distance >= (max_distance - margin_distance)) {
 		state = STATE_DOWN;
 	}
 }

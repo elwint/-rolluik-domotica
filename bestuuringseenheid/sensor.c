@@ -27,8 +27,6 @@ unsigned int sensor_data = 0;
 uint64_t sensor_sum = 0;
 uint16_t sensor_count = 0;
 
-uint8_t sensor_has_run = 0;
-
 void update_data() {
 	sensor_data = sensor_sum / sensor_count;
 	#ifdef light
@@ -39,7 +37,6 @@ void update_data() {
 	#endif
 	sensor_count = 0;
 	sensor_sum = 0;
-	sensor_has_run = 1;
 }
 
 ISR(ADC_vect){

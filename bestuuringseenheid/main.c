@@ -13,9 +13,17 @@ void count();
 
 int main() {
 	protocol_init();
+
 	sensor_init();
+	sei();
+	sensor_start();
+
+	_delay_ms(250);
+	update_data();
+
 	state_init();
 	led_init();
+	led_update();
 
 	SCH_Init_T1();
 
