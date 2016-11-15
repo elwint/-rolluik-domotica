@@ -14,7 +14,7 @@ unsigned int down_sensor   =  70;
 
 unsigned int min_sensor    =  10; // -40 + 50 (offset)
 unsigned int max_sensor    = 175; // 125 + 50 (offset)
-unsigned int margin_sensor =   3;
+unsigned int margin_sensor =   2;
 unsigned int up_sensor     =  65; //  15 + 50 (offset)
 unsigned int down_sensor   =  70; //  20 + 50 (offset)
 #endif
@@ -34,10 +34,10 @@ uint8_t forced = 0;
 void state_update() {
 	if (!forced) {
 		enum state_t newstate = STATE_NONE;
-		if ((sensor_data - margin_sensor) <= up_sensor) {
+		if (sensor_data <= up_sensor) {
 			newstate = STATE_UP;
 		}
-		if ((sensor_data + margin_sensor) >= down_sensor) {
+		if (sensor_data >= down_sensor) {
 			newstate = STATE_DOWN;
 		}
 

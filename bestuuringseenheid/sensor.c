@@ -25,14 +25,22 @@ TEMP
 unsigned int sensor_data = 0;
 
 ISR(ADC_vect){
-	int miliVolts = 5000/1024*ADC;
+  uint64_t miliVolts = (500000/1024*ADC)/100;
 
-	#ifdef light
-	sensor_data = (2*miliVolts)/100;
-	#endif
-	#ifdef temp
-	sensor_data = miliVolts/10;
-	#endif
+  #ifdef light
+  uint64_t rldr;
+
+  if (miliVolts > 1)
+  {
+    rldr = (100*(5000-miliVolts))/miliVolts;
+  } else {
+    rldr = 500000;
+  }
+  sensor_data = 50000/rldr/100;
+  #endif
+  #ifdef temp
+  sensor_data = miliVolts/10;
+  #endif
 }
 
 // Echo on D3
