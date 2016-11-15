@@ -20,7 +20,11 @@ void uart_init(void) {
 }
 
 uint8_t uart_has_data() {
-	return bit_is_set(UCSR0A, RXC0);
+	if (!bit_is_set(UCSR0A, RXC0)) {
+		_delay_ms(1);
+		return bit_is_set(UCSR0A, RXC0);
+	}
+	return 1;
 }
 
 void uart_put_uint8(uint8_t i) {
