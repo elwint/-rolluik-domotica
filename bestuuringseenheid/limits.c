@@ -32,6 +32,9 @@ enum state_t state = STATE_NONE;
 uint8_t forced = 0;
 
 void state_update() {
+	if (!sensor_has_run) {
+		return;
+	}
 	if (!forced) {
 		enum state_t newstate = STATE_NONE;
 		if (sensor_data <= up_sensor) {

@@ -24,23 +24,43 @@ TEMP
 
 unsigned int sensor_data = 0;
 
+uint64_t sensor_sum = 0;
+uint16_t sensor_count = 0;
+
+uint8_t sensor_has_run = 0;
+
+void update_data() {
+	sensor_data = sensor_sum / sensor_count;
+	#ifdef light
+		sensor_data /= 100;
+	#endif
+	#ifdef temp
+		sensor_data /= 10;
+	#endif
+	sensor_count = 0;
+	sensor_sum = 0;
+	sensor_has_run = 1;
+}
+
 ISR(ADC_vect){
-  uint64_t miliVolts = (500000/1024*ADC)/100;
+	uint64_t miliVolts = (500000/1024*ADC)/100;
 
-  #ifdef light
-  uint64_t rldr;
+	#ifdef light
+	uint64_t rldr;
 
-  if (miliVolts > 1)
-  {
-    rldr = (100*(5000-miliVolts))/miliVolts;
-  } else {
-    rldr = 500000;
-  }
-  sensor_data = 50000/rldr/100;
-  #endif
-  #ifdef temp
-  sensor_data = miliVolts/10;
-  #endif
+	if (miliVolts > 1)
+	{
+		rldr = (100*(5000-miliVolts))/miliVolts;
+	} else {
+		rldr = 500000;
+	}
+	sensor_sum += 50000/rldr;
+	#endif
+	#ifdef temp
+	sensor_sum += miliVolts;
+	#endif
+
+	sensor_count++;
 }
 
 // Echo on D3
