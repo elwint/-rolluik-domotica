@@ -18,6 +18,7 @@ class Status(IntEnum):
 	OK = 0
 	UNKNOWN_COMMAND = 1
 	MISSING_DATA = 2
+	INVALID_LIMITS = 3
 
 class Sensor(IntEnum):
 	LIGHT = 1
@@ -33,11 +34,13 @@ class Arduino:
 		self.ser = serial.Serial(self.port, 19200, timeout=0.25)
 		time.sleep(2.5)
 
-	def send(self, command, data=[], values=0):
-		self.write_data(command, data)
-		return self.get_data(values)
+	def send(self, command, data=[], values=0, user_input=False):
+		c = self.write_data(command, data, user_input)
+		if c:
+			return self.get_data(values, user_input)
+		return None
 
-	def get_data(self, values=0):
+	def get_data(self, values=0, user_input=False):
 		response = self.ser.read(1 + (2*values))
 		if not len(response):
 			return None
@@ -50,6 +53,12 @@ class Arduino:
 			raise Exception('Sent unknown command')
 		elif status == Status.MISSING_DATA:
 			raise Exception('Sent less values than expected')
+		elif status == Status.INVALID_LIMITS:
+			if user_input:
+				error_dialog('Waardes ongeldig.')
+				return None
+			else:
+				raise Exception('Invalid limits')
 		elif status != Status.OK:
 			raise Exception('Received unknown status')
 
@@ -60,12 +69,19 @@ class Arduino:
 			data.append(256*response[i*2+1] + response[i*2+2])
 		return data
 	
-	def write_data(self, command, data=[]):
+	def write_data(self, command, data=[], user_input=False):
+		for number in data:
+			if number > (1<<16)-1 or number < 0:
+				if user_input:
+					error_dialog('Waardes ongeldig.')
+					return False
+				else:
+					raise Exception('Extra values cannot be bigger than 16 bit or be negative')
+		
 		self.ser.write(bytes([command]))
 		for number in data:
-			if number > (1<<16)-1:
-				raise exception('Extra values cannot be bigger than 16 bit')
 			self.ser.write(bytes([number // 256, number % 256]))
+		return True
 	
 	def close(self):
 		self.ser.close()
@@ -86,37 +102,37 @@ class Widget:
 		self.update_data()
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.update_data)
-		self.timer.start(60000)
+		self.timer.start(10000)
 
 	def update_data(self): #TODO: Graph
-		print('Updating widget ' + self.dev.port)
-		status = self.dev.send(Command.STATUS, [], 3)
-		sensor = self.dev.send(Command.SENSOR, [], 3)
-		limits = self.dev.send(Command.GET_LIMITS, [], 4)
+		self.status = self.dev.send(Command.STATUS, [], 3)
+		self.sensor = self.dev.send(Command.SENSOR, [], 3)
+		self.limits = self.dev.send(Command.GET_LIMITS, [], 4)
 
-		if status[2] == 0:
-			statusText = 'OPGEROLD ' if status[1] == State.UP else 'UITGEROLD '
+		if self.status[2] == 1:
+			statusText = 'OPGEROLD ' if self.status[1] == State.UP else 'UITGEROLD '
 		else:
-			statusText = 'OPROLLEN ' if status[1] == State.UP else 'UITROLLEN '
-		statusText += str(sensor[0]/100) + ' m '
-		statusText += '[automatisch]' if status[0] == 0 else '[handmatig]'
+			statusText = 'OPROLLEN ' if self.status[1] == State.UP else 'UITROLLEN '
+		statusText += str(self.sensor[0]/100) + ' m '
+		statusText += '[automatisch]' if self.status[0] == 0 else '[handmatig]'
 
 		self.gui.lblStatus.setText(statusText)
-		self.gui.lblOprollen.setText(str(limits[0]/100) + ' m')
-		self.gui.lblUitrollen.setText(str(limits[1]/100) + ' m')
+		self.gui.lblOprollen.setText('{0:.2f}'.format(self.limits[0]/100) + ' m')
+		self.gui.lblUitrollen.setText('{0:.2f}'.format(self.limits[1]/100) + ' m')
 
-		if sensor[1] == Sensor.LIGHT:
+		if self.sensor[1] == Sensor.LIGHT:
 			self.gui.lblSensor.setText('Sensordata Lichtintensiteit')
 			unit = ' klx'
-			sensorData = sensor[2]
-		elif sensor[1] == Sensor.TEMP:
+		elif self.sensor[1] == Sensor.TEMP:
 			self.gui.lblSensor.setText('Sensordata Temperatuur')
-			unit = ' ºC'
-			sensorData = sensor[2]-50
+			unit = ' \u00B0C'
+			self.sensor[2] -= 50
+			self.limits[2] -= 50
+			self.limits[3] -= 50
 
-		self.gui.lblSensorData.setText(str(sensorData) + unit)
-		self.gui.lblSensorOprollen.setText(str(limits[2]) + unit)
-		self.gui.lblSensorUitrollen.setText(str(limits[3]) + unit)
+		self.gui.lblSensorData.setText(str(self.sensor[2]) + unit)
+		self.gui.lblSensorOprollen.setText(str(self.limits[2]) + unit)
+		self.gui.lblSensorUitrollen.setText(str(self.limits[3]) + unit)
 
 	def force_state(self, state):
 		self.dev.send(Command.FORCE, [state])
@@ -126,22 +142,34 @@ class Widget:
 		self.dev.send(Command.AUTO)
 		self.update_data()
 
-	def set_limits(self): #TODO: Limits popup
-		pass
+	def set_limits(self):
+		distance_limits = [self.limits[0], self.limits[1]]
+		sensors_limits = [[self.sensor[1], self.limits[2], self.limits[3]]]
+		new_data = set_limits_dialog(self.dev.port, distance_limits, sensors_limits)
+		if new_data == None:
+			return
+
+		distance_limits = new_data['dl']
+		sensor_limits = new_data['sl'][0]
+		if sensor_limits[0] == Sensor.TEMP:
+			sensor_limits[1] += 50
+			sensor_limits[2] += 50
+		self.dev.send(Command.SET_LIMITS, [distance_limits[0], distance_limits[1], sensor_limits[1], sensor_limits[2]], 0, True)
+		self.update_data()
 
 	def remove(self):
-		print('Removing widget' + self.dev.port)
 		self.parent.widgetsLayout.removeWidget(self.gui)
 		self.gui.deleteLater()
 		self.gui = None
 		self.timer.stop()
 
 app = QtWidgets.QApplication(sys.argv)
+app.setStyle("fusion")
 mainWindow = uic.loadUi('main.ui')
 
 cPorts = []
 device_widgets = []
-def update_devices():
+def check_devices():
 	portList = list(serial.tools.list_ports.comports())
 	for cPort in cPorts:
 		if cPort not in portList: # Device disconnected
@@ -150,6 +178,7 @@ def update_devices():
 					widget.remove()
 					widget.dev.close()
 					device_widgets.remove(widget)
+					update_widgets_positions()
 					break
 			cPorts.remove(cPort)
 
@@ -170,15 +199,51 @@ def update_devices():
 
 		if t == True:
 			w = Widget(mainWindow, dev)
+			#device_widgets.append(Widget(mainWindow, dev))
+			#device_widgets.append(Widget(mainWindow, dev))
+			#device_widgets.append(Widget(mainWindow, dev))
 			device_widgets.append(w)
+			update_widgets_positions()
 		cPorts.append(port)
 
+def update_widgets_positions():
+	r,p = 0,0
+	for w in device_widgets:
+		mainWindow.widgetsLayout.removeWidget(w.gui)
+		if (w.gui.width()+mainWindow.widgetsLayout.horizontalSpacing())*p+w.gui.width() > mainWindow.widgets.width():
+			print('True')
+			r += 1
+			p = 0
+		mainWindow.widgetsLayout.addWidget(w.gui, r, p, QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+		p += 1
+		
 def update_widgets():
 	for w in device_widgets:
 		w.update_data()
 
-def all_set_limits(): #TODO: Limits popup
-	pass
+def all_set_limits():
+	if not device_widgets:
+		return
+	distance_limits = [device_widgets[0].limits[0], device_widgets[0].limits[1]]
+	sensors_limits = []
+	for w in device_widgets:
+		sensors_limits.append([w.sensor[1], w.limits[2], w.limits[3]])
+
+	new_data = set_limits_dialog('Alles', distance_limits, sensors_limits)
+	if new_data == None:
+		return
+
+	distance_limits = new_data['dl']
+	sensors_limits = new_data['sl']
+	for w in device_widgets:
+		for sensor in sensors_limits:
+			if sensor[0] == w.sensor[1]:
+				if sensor[0] == Sensor.TEMP:
+					sensor[1] += 50
+					sensor[2] += 50
+				w.dev.send(Command.SET_LIMITS, [distance_limits[0], distance_limits[1], sensor[1], sensor[2]], 0, True)
+				break
+	update_widgets()
 
 def all_force_state(state):
 	for w in device_widgets:
@@ -190,13 +255,62 @@ def all_enable_auto():
 		w.dev.send(Command.AUTO)
 	update_widgets()
 
+def error_dialog(msg):
+	dialog = uic.loadUi('error.ui')
+	dialog.lblError.setText(msg)
+	dialog.exec_()
+
+def set_limits_dialog(t, distance_limits, sensors_limits):
+	dialog = uic.loadUi('instellen.ui')
+	dialog.setParent(mainWindow, QtCore.Qt.Dialog)
+	dialog.setWindowTitle('Instellen - ' + t)
+	dialog.txtOprollen.setText('{0:.2f}'.format(distance_limits[0]/100))
+	dialog.txtUitrollen.setText('{0:.2f}'.format(distance_limits[1]/100))
+
+	t,l = False,False
+	for sensor in sensors_limits:
+		if sensor[0] == Sensor.TEMP and t == False:
+			t = True
+			dialog.txtTOprollen.setText(str(sensor[1]))
+			dialog.txtTUitrollen.setText(str(sensor[2]))
+		elif sensor[0] == Sensor.LIGHT and l == False:
+			l = True
+			dialog.txtLOprollen.setText(str(sensor[1]))
+			dialog.txtLUitrollen.setText(str(sensor[2]))
+
+	if t == False:
+		dialog.frmTemp.hide()
+	if l == False:
+		dialog.frmLight.hide()
+
+	result = dialog.exec_()
+	if result == QtWidgets.QDialog.Accepted:
+		try:
+			dl = [int(float(dialog.txtOprollen.text())*100),  int(float(dialog.txtUitrollen.text())*100)]
+			sl = []
+			if t:
+				sl.append([Sensor.TEMP, int(dialog.txtTOprollen.text()), int(dialog.txtTUitrollen.text())])
+			if l:
+				sl.append([Sensor.LIGHT, int(dialog.txtLOprollen.text()), int(dialog.txtLUitrollen.text())])
+			return {'dl':dl, 'sl':sl}
+		except ValueError:
+			error_dialog('Waardes ongeldig.')
+			return None
+	else:
+		return None
+
 timer = QtCore.QTimer()
-timer.timeout.connect(update_devices)
+timer.timeout.connect(check_devices)
 timer.start(1000)
+
+def test_l():
+	device_widgets[0].dev.send(Command.SET_LIMITS, [10, 100, 30, 40])
 
 mainWindow.btnInstellen.clicked.connect(all_set_limits)
 mainWindow.btnOprollen.clicked.connect(lambda: all_force_state(State.UP))
 mainWindow.btnUitrollen.clicked.connect(lambda: all_force_state(State.DOWN))
 mainWindow.btnAutomatisch.clicked.connect(all_enable_auto)
+#QtWidgets.QWidget.resizeEvent(mainWindow, update_widgets_positions())
+#mainWindow.resizeEvent = update_widgets_positions()
 mainWindow.show()
 os._exit(app.exec_())
