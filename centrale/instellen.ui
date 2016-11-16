@@ -473,6 +473,16 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>txtOprollen</tabstop>
+  <tabstop>txtUitrollen</tabstop>
+  <tabstop>txtTOprollen</tabstop>
+  <tabstop>txtTUitrollen</tabstop>
+  <tabstop>txtLOprollen</tabstop>
+  <tabstop>txtLUitrollen</tabstop>
+  <tabstop>btnInstellen</tabstop>
+  <tabstop>btnCancel</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
