@@ -1,8 +1,11 @@
 #!/bin/python3
-from PyQt5 import QtCore, QtWidgets, uic
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from enum import IntEnum
 import sys, os, time, serial
 import serial.tools.list_ports
+import pyqtgraph, numpy
+pyqtgraph.setConfigOption('background', 'w')
+pyqtgraph.setConfigOption('foreground', '#333')
 
 class Command(IntEnum):
 	PING = 1
@@ -98,13 +101,34 @@ class Widget:
 		self.gui.btnOprollen.clicked.connect(lambda: self.force_state(State.UP))
 		self.gui.btnUitrollen.clicked.connect(lambda: self.force_state(State.DOWN))
 		self.gui.btnAutomatisch.clicked.connect(self.enable_auto)
-
 		self.update_data()
+
+		if self.sensor[1] == Sensor.LIGHT:
+			self.gui.lblSensor.setText('Sensordata Lichtintensiteit')
+			self.gui.lblSensorIcon.setPixmap(QtGui.QPixmap("icons/light.png"))
+		elif self.sensor[1] == Sensor.TEMP:
+			self.gui.lblSensor.setText('Sensordata Temperatuur')
+			self.gui.lblSensorIcon.setPixmap(QtGui.QPixmap("icons/temp.png"))
+
+		self.graph = pyqtgraph.PlotWidget()
+		self.graph.setLabel('bottom', 'Tijd (min)')
+		if self.sensor[1] == Sensor.LIGHT:
+			self.graph.setLabel('left', 'Licht (klx)')
+		elif self.sensor[1] == Sensor.TEMP:
+			self.graph.setLabel('left', 'Temperatuur (\00B0C)')
+		self.gui.graphLayout.addWidget(self.graph)
+		self.graph.setMouseEnabled(False, False)
+		self.plot_data = [self.sensor[1]]
+		self.update_graph()
+
 		self.timer = QtCore.QTimer()
 		self.timer.timeout.connect(self.update_data)
 		self.timer.start(10000)
+		self.graphTimer = QtCore.QTimer()
+		self.graphTimer.timeout.connect(self.update_graph)
+		self.graphTimer.start(60000)
 
-	def update_data(self): #TODO: Graph
+	def update_data(self):
 		self.status = self.dev.send(Command.STATUS, [], 3)
 		self.sensor = self.dev.send(Command.SENSOR, [], 3)
 		self.limits = self.dev.send(Command.GET_LIMITS, [], 4)
@@ -121,10 +145,8 @@ class Widget:
 		self.gui.lblUitrollen.setText('{0:.2f}'.format(self.limits[1]/100) + ' m')
 
 		if self.sensor[1] == Sensor.LIGHT:
-			self.gui.lblSensor.setText('Sensordata Lichtintensiteit')
 			unit = ' klx'
 		elif self.sensor[1] == Sensor.TEMP:
-			self.gui.lblSensor.setText('Sensordata Temperatuur')
 			unit = ' \u00B0C'
 			self.sensor[2] -= 50
 			self.limits[2] -= 50
@@ -133,6 +155,13 @@ class Widget:
 		self.gui.lblSensorData.setText(str(self.sensor[2]) + unit)
 		self.gui.lblSensorOprollen.setText(str(self.limits[2]) + unit)
 		self.gui.lblSensorUitrollen.setText(str(self.limits[3]) + unit)
+	
+	def update_graph(self):
+		if len(self.plot_data) == 24:
+			self.plot_data.pop(0)
+		self.plot_data.append(self.sensor[2])
+		data = (24-len(self.plot_data)) * [0] + self.plot_data
+		self.graph.plot(range(-23,1), data, pen={'color': '#333'}, clear=True)
 
 	def force_state(self, state):
 		self.dev.send(Command.FORCE, [state])
@@ -161,10 +190,13 @@ class Widget:
 		self.parent.widgetsLayout.removeWidget(self.gui)
 		self.gui.deleteLater()
 		self.gui = None
+		self.graphTimer.stop()
 		self.timer.stop()
 
 app = QtWidgets.QApplication(sys.argv)
 app.setStyle("fusion")
+f = open('stylesheet.qss', 'r')
+app.setStyleSheet(f.read())
 mainWindow = uic.loadUi('main.ui')
 
 cPorts = []
@@ -199,22 +231,18 @@ def check_devices():
 
 		if t == True:
 			w = Widget(mainWindow, dev)
-			#device_widgets.append(Widget(mainWindow, dev))
-			#device_widgets.append(Widget(mainWindow, dev))
-			#device_widgets.append(Widget(mainWindow, dev))
 			device_widgets.append(w)
 			update_widgets_positions()
 		cPorts.append(port)
 
-def update_widgets_positions():
+def update_widgets_positions(resizeEvent=None):
 	r,p = 0,0
 	for w in device_widgets:
 		mainWindow.widgetsLayout.removeWidget(w.gui)
-		if (w.gui.width()+mainWindow.widgetsLayout.horizontalSpacing())*p+w.gui.width() > mainWindow.widgets.width():
-			print('True')
+		if (w.gui.width()+mainWindow.widgetsLayout.horizontalSpacing())*p+w.gui.width()+16 > mainWindow.scrollArea.width():
 			r += 1
 			p = 0
-		mainWindow.widgetsLayout.addWidget(w.gui, r, p, QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+		mainWindow.widgetsLayout.addWidget(w.gui, r, p, QtCore.Qt.AlignTop)
 		p += 1
 		
 def update_widgets():
@@ -310,7 +338,6 @@ mainWindow.btnInstellen.clicked.connect(all_set_limits)
 mainWindow.btnOprollen.clicked.connect(lambda: all_force_state(State.UP))
 mainWindow.btnUitrollen.clicked.connect(lambda: all_force_state(State.DOWN))
 mainWindow.btnAutomatisch.clicked.connect(all_enable_auto)
-#QtWidgets.QWidget.resizeEvent(mainWindow, update_widgets_positions())
-#mainWindow.resizeEvent = update_widgets_positions()
+mainWindow.resizeEvent = update_widgets_positions
 mainWindow.show()
 os._exit(app.exec_())
