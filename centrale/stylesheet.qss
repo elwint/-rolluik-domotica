@@ -2,7 +2,7 @@ QWidget {
 	background: #FFF;
 	color: #333;
 	font-family: "Open Sans", "Helvetica Neue", "Helvetica", "Arial";
-	font-size: 12pt;
+	font-size: 10pt;
 }
 
 #lblSensorData, #lblPort {

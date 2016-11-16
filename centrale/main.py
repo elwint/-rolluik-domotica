@@ -1,9 +1,9 @@
 #!/bin/python3
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from enum import IntEnum
-import sys, os, time, serial
+import sys, os, time, serial, pyqtgraph
 import serial.tools.list_ports
-import pyqtgraph, numpy
+import pyqtgraph
 pyqtgraph.setConfigOption('background', 'w')
 pyqtgraph.setConfigOption('foreground', '#333')
 
@@ -184,6 +184,7 @@ class Widget:
 			sensor_limits[1] += 50
 			sensor_limits[2] += 50
 		self.dev.send(Command.SET_LIMITS, [distance_limits[0], distance_limits[1], sensor_limits[1], sensor_limits[2]], 0, True)
+		time.sleep(0.5)
 		self.update_data()
 
 	def remove(self):
@@ -263,14 +264,17 @@ def all_set_limits():
 
 	distance_limits = new_data['dl']
 	sensors_limits = new_data['sl']
+	for sensor in sensors_limits:
+		if sensor[0] == Sensor.TEMP:
+			sensor[1] += 50
+			sensor[2] += 50
+
 	for w in device_widgets:
 		for sensor in sensors_limits:
 			if sensor[0] == w.sensor[1]:
-				if sensor[0] == Sensor.TEMP:
-					sensor[1] += 50
-					sensor[2] += 50
 				w.dev.send(Command.SET_LIMITS, [distance_limits[0], distance_limits[1], sensor[1], sensor[2]], 0, True)
 				break
+	time.sleep(0.5)
 	update_widgets()
 
 def all_force_state(state):
@@ -330,9 +334,6 @@ def set_limits_dialog(t, distance_limits, sensors_limits):
 timer = QtCore.QTimer()
 timer.timeout.connect(check_devices)
 timer.start(1000)
-
-def test_l():
-	device_widgets[0].dev.send(Command.SET_LIMITS, [10, 100, 30, 40])
 
 mainWindow.btnInstellen.clicked.connect(all_set_limits)
 mainWindow.btnOprollen.clicked.connect(lambda: all_force_state(State.UP))
